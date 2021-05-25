@@ -589,6 +589,33 @@ func TestIssueService_DeleteAttachment(t *testing.T) {
 	}
 }
 
+func TestIssueService_DeleteLink(t *testing.T) {
+	setup()
+	defer teardown()
+	testMux.HandleFunc("/rest/api/2/issueLink/10054", func(w http.ResponseWriter, r *http.Request) {
+		testMethod(t, r, "DELETE")
+		testRequestURL(t, r, "/rest/api/2/issueLink/10054")
+
+		w.WriteHeader(http.StatusNoContent)
+		fmt.Fprint(w, `{}`)
+	})
+
+	resp, err := testClient.Issue.DeleteLink("10054")
+	if resp.StatusCode != 204 {
+		t.Error("Expected link not deleted.")
+		if resp.StatusCode == 403 {
+			t.Error("User not permitted to delete link")
+		}
+		if resp.StatusCode == 404 {
+			t.Error("Link not found")
+		}
+	}
+
+	if err != nil {
+		t.Errorf("Error given: %s", err)
+	}
+}
+
 func TestIssueService_Search(t *testing.T) {
 	setup()
 	defer teardown()
@@ -613,10 +640,10 @@ func TestIssueService_Search(t *testing.T) {
 		t.Errorf("StartAt should populate with 1, %v given", resp.StartAt)
 	}
 	if resp.MaxResults != 40 {
-		t.Errorf("StartAt should populate with 40, %v given", resp.MaxResults)
+		t.Errorf("MaxResults should populate with 40, %v given", resp.MaxResults)
 	}
 	if resp.Total != 6 {
-		t.Errorf("StartAt should populate with 6, %v given", resp.Total)
+		t.Errorf("Total should populate with 6, %v given", resp.Total)
 	}
 }
 
@@ -1739,8 +1766,8 @@ func TestIssueService_Get_Fields_AffectsVersions(t *testing.T) {
 			Name:        "2.1.0-rc3",
 			Self:        "http://www.example.com/jira/rest/api/2/version/10705",
 			ReleaseDate: "2018-09-30",
-			Released:    false,
-			Archived:    false,
+			Released:    Bool(false),
+			Archived:    Bool(false),
 			Description: "test description",
 		},
 	}) {
